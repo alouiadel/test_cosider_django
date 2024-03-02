@@ -1,68 +1,84 @@
-from django.shortcuts import render
+from django.db import transaction
+from django.db.models import Q
+from django.shortcuts import render, get_object_or_404
 import requests
 from .models import Invoice, InvoiceItem
-from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.core.serializers import serialize
 from django.template.loader import render_to_string
 from django.http import HttpResponse
 
 
-# Task 1: Read and display invoice data
-def display_invoices(request):
-    invoices = Invoice.objects.all()
-    return render(request, 'invoices.html', {'invoices': invoices})
-
-
-# Task 2: Search by item label
+# Search by item label
 def search_invoices(request):
     if request.method == 'GET':
         query = request.GET.get('query', '')
-        invoices = InvoiceItem.objects.filter(item_label__icontains=query)
-        data = serialize('json', invoices)
-        return JsonResponse(data, safe=False)
+        invoices = Invoice.objects.filter(
+            Q(invoiceitem__item_label__icontains=query) |
+            Q(invoiceitem__item_unit__icontains=query) |
+            Q(client_name__icontains=query) |
+            Q(supplier_name__icontains=query)
+        ).distinct()
+        return render(request, 'search_results.html', {'invoices': invoices, 'query': query})
 
 
-# Task 3: Display invoice details
-def display_invoice_details(request, invoice_id):
-    invoice = Invoice.objects.get(invoice_id=invoice_id)
-    items = InvoiceItem.objects.filter(invoice=invoice)
-    return render(request, 'invoice_details.html', {'invoice': invoice, 'items': items})
-
-
-# Task 4: Print invoice
+# Print invoice
 @csrf_exempt
 def print_invoice(request):
-    if request.method == 'POST':
-        invoice_id = request.POST.get('invoice_id')
-        invoice = Invoice.objects.get(invoice_id=invoice_id)
-        items = InvoiceItem.objects.filter(invoice=invoice)
-        data = {'invoice': invoice, 'items': items}
-        html = render_to_string('print_invoice.html', data)
-        return HttpResponse(html)
+    invoice_id = request.GET.get('invoice_id')
+    if not invoice_id:
+        return HttpResponse("Invoice ID is missing")
+    invoice = get_object_or_404(Invoice, invoice_id=invoice_id)
+    items = invoice.invoiceitem_set.all()
+    data = {'invoice': invoice, 'items': items}
+    html = render_to_string('print_invoice.html', data)
+    return HttpResponse(html)
 
 
-# Task 5: Fetch invoice data from external service
+# Fetch invoice data from external service and display it
+# The view had to be cleared and not appended to the existing one
+@transaction.atomic # This decorator ensures that the database is not left in an inconsistent state if an error occurs
 def fetch_invoices(request):
     url = 'https://elhoussam.github.io/invoicesapi/db.json'
     response = requests.get(url)
     data = response.json()
-    for item in data['invoices']:
+    # Clear existing data
+    Invoice.objects.all().delete()
+    for invoice_data in data:
+        # Extract invoice data
+        invoice_id = invoice_data['InvoiceID']
+        invoice_date = invoice_data['InvoiceDate']
+        client_name = invoice_data['ClientName']
+        supplier_name = invoice_data['SupplierName']
+        total_amount = (sum(item['ItemPrice'] for item in invoice_data['InvoiceItems'])
+                        + sum(item['ItemTax'] for item in invoice_data['InvoiceItems']))
+        # Create Invoice object
         invoice = Invoice.objects.create(
-            invoice_id=item['invoice_id'],
-            invoice_date=item['invoice_date'],
-            client_name=item['client_name'],
-            supplier_name=item['supplier_name'],
-            total_amount=item['total_amount']
+            invoice_id=invoice_id,
+            invoice_date=invoice_date,
+            client_name=client_name,
+            supplier_name=supplier_name,
+            total_amount=total_amount
         )
-        for item_detail in item['items']:
+        # Extract and create InvoiceItem objects
+        for item_data in invoice_data['InvoiceItems']:
+            item_label = item_data['ItemLibelle']
+            item_unit = item_data['ItemUnit']
+            quantity = item_data['ItemQuantity']
+            price = item_data['ItemPrice']
+            tax = item_data['ItemTax']
+            total_item_amount = price * quantity
             InvoiceItem.objects.create(
                 invoice=invoice,
-                item_label=item_detail['item_label'],
-                item_unit=item_detail['item_unit'],
-                quantity=item_detail['quantity'],
-                price=item_detail['price'],
-                tax=item_detail['tax'],
-                total_item_amount=item_detail['total_item_amount']
+                item_label=item_label,
+                item_unit=item_unit,
+                quantity=quantity,
+                price=price,
+                tax=tax,
+                total_item_amount=total_item_amount
             )
-    return JsonResponse({'status': 'success'})
+    return render(request, 'invoices.html', {'invoices': Invoice.objects.all()})
+
+
+# Define the 404 page
+def custom_404_view(request, exception):
+    return render(request, '404.html', status=404)
