@@ -1,7 +1,6 @@
 from django.urls import path
 from django.views.generic import RedirectView
 from cosider import views
-
 handler404 = 'cosider.views.custom_404_view'
 
 urlpatterns = [
