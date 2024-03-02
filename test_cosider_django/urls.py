@@ -9,7 +9,7 @@ urlpatterns = [
     path('', RedirectView.as_view(url='invoices/', permanent=True)),
 
     # Read and display invoice data
-    path('invoices/', views.display_invoices, name='display_invoices'),
+    path('invoices/', views.fetch_invoices, name='fetch_invoices'),
 
     # Search by item label
     path('search/', views.search_invoices, name='search_invoices'),
