@@ -19,6 +19,6 @@ The solution is implemented using Python with the Django framework. Here's an ov
 
 ## Task Details
 - Duration: 72 hours
-- Technologies: Python, Django
+- Technologies: Python, Django, bootstrap, HTML, CSS
 - External Resources:
     - Invoice URL: [Invoices API](https://elhoussam.github.io/invoicesapi/db.json)
