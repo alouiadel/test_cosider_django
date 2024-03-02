@@ -6,46 +6,47 @@
     <title>Search Results</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <style>
+        .center-text {
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1 class="mt-5">Search Results for "{{ query }}"</h1>
-        <ul class="list-group mt-4">
-            {% for invoice in invoices %}
-                <li class="list-group-item">
-                    <h5>Invoice ID: {{ invoice.invoice_id }}</h5>
-                    <p>Invoice Date: {{ invoice.invoice_date }}</p>
-                    <p>Client Name: {{ invoice.client_name }}</p>
-                    <p>Supplier Name: {{ invoice.supplier_name }}</p>
-                    <p>Total Amount: {{ invoice.total_amount }}</p>
-                    <h6>Items:</h6>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Item Label</th>
-                                <th>Item Unit</th>
-                                <th>Quantity</th>
-                                <th>Price</th>
-                                <th>Tax</th>
-                                <th>Total Item Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in invoice.invoiceitem_set.all %}
-                                <tr>
-                                    <td>{{ item.item_label }}</td>
-                                    <td>{{ item.item_unit }}</td>
-                                    <td>{{ item.quantity }}</td>
-                                    <td>{{ item.price }}</td>
-                                    <td>{{ item.tax }}</td>
-                                    <td>{{ item.total_item_amount }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </li>
-            {% endfor %}
-        </ul>
+        <h1 class="mt-5 center-text">Invoices containing "{{ query }}"</h1>
+        {% if invoices %}
+        <table class="table mt-4">
+            <thead>
+                <tr>
+                    <th>Invoice ID</th>
+                    <th>Invoice Date</th>
+                    <th>Client Name</th>
+                    <th>Supplier Name</th>
+                    <th>Total Amount</th>
+                    <th>Print</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in invoices %}
+                <tr>
+                    <td>{{ invoice.invoice_id }}</td>
+                    <td>{{ invoice.invoice_date }}</td>
+                    <td>{{ invoice.client_name }}</td>
+                    <td>{{ invoice.supplier_name }}</td>
+                    <td>{{ invoice.total_amount }}</td>
+                    <td>
+                        <a href="{% url 'print_invoice' invoice.invoice_id %}" class="btn btn-primary">Print</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+            <!-- Back to Home button -->
+        <a href="{% url 'fetch_invoices' %}" class="btn btn-secondary">Back to Home</a>
+        {% else %}
+        <p class="mt-4">No invoices found.</p>
+        {% endif %}
     </div>
 </body>
 </html>

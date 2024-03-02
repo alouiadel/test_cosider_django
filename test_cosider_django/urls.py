@@ -14,5 +14,5 @@ urlpatterns = [
     path('search/', views.search_invoices, name='search_invoices'),
 
     # Print invoice
-    path('print/', views.print_invoice, name='print_invoice'),
+    path('print/<str:invoice_id>/', views.print_invoice, name='print_invoice'),
 ]

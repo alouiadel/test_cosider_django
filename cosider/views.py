@@ -4,8 +4,6 @@ from django.shortcuts import render, get_object_or_404
 import requests
 from .models import Invoice, InvoiceItem
 from django.views.decorators.csrf import csrf_exempt
-from django.template.loader import render_to_string
-from django.http import HttpResponse
 
 
 # Search by item label
@@ -23,20 +21,15 @@ def search_invoices(request):
 
 # Print invoice
 @csrf_exempt
-def print_invoice(request):
-    invoice_id = request.GET.get('invoice_id')
-    if not invoice_id:
-        return HttpResponse("Invoice ID is missing")
+def print_invoice(request, invoice_id):
     invoice = get_object_or_404(Invoice, invoice_id=invoice_id)
-    items = invoice.invoiceitem_set.all()
-    data = {'invoice': invoice, 'items': items}
-    html = render_to_string('print_invoice.html', data)
-    return HttpResponse(html)
+    context = {'invoice': invoice}
+    return render(request, 'print_invoice.html', context)
 
 
 # Fetch invoice data from external service and display it
 # The view had to be cleared and not appended to the existing one
-@transaction.atomic # This decorator ensures that the database is not left in an inconsistent state if an error occurs
+@transaction.atomic  # This decorator ensures that the database is not left in an inconsistent state if an error occurs
 def fetch_invoices(request):
     url = 'https://elhoussam.github.io/invoicesapi/db.json'
     response = requests.get(url)
@@ -66,7 +59,7 @@ def fetch_invoices(request):
             quantity = item_data['ItemQuantity']
             price = item_data['ItemPrice']
             tax = item_data['ItemTax']
-            total_item_amount = price * quantity
+            total_item_amount = (price + tax) * quantity
             InvoiceItem.objects.create(
                 invoice=invoice,
                 item_label=item_label,
