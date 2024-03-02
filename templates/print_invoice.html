@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Invoice</title>
+</head>
+<body>
+    <h1>Invoice Details</h1>
+    <h2>Invoice ID: {{ invoice.invoice_id }}</h2>
+    <p>Invoice Date: {{ invoice.invoice_date }}</p>
+    <p>Client Name: {{ invoice.client_name }}</p>
+    <p>Supplier Name: {{ invoice.supplier_name }}</p>
+
+    <h2>Items:</h2>
+    <ul>
+        {% for item in items %}
+            <li>{{ item.item_label }} - {{ item.quantity }} x ${{ item.price }}</li>
+        {% endfor %}
+    </ul>
+    
+    <p>Total Amount: ${{ invoice.total_amount }}</p>
+</body>
+</html>

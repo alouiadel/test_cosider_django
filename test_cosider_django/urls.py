@@ -1,7 +1,6 @@
 from django.urls import path
 from django.views.generic import RedirectView
 from cosider import views
-
 handler404 = 'cosider.views.custom_404_view'
 
 urlpatterns = [
@@ -9,7 +8,7 @@ urlpatterns = [
     path('', RedirectView.as_view(url='invoices/', permanent=True)),
 
     # Read and display invoice data
-    path('invoices/', views.display_invoices, name='display_invoices'),
+    path('invoices/', views.fetch_invoices, name='fetch_invoices'),
 
     # Search by item label
     path('search/', views.search_invoices, name='search_invoices'),
