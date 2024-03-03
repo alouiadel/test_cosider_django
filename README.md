@@ -6,7 +6,6 @@ The task involves creating an application to digitize a journal of invoices pres
 
 - Reading and formatting invoice data for display.
 - Searching invoices by item label.
-- Displaying detailed invoice information.
 - Printing selected invoices in a specified format.
 
 ## Implementation

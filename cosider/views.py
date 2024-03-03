@@ -44,13 +44,15 @@ def fetch_invoices(request):
         supplier_name = invoice_data['SupplierName']
         total_amount = (sum(item['ItemPrice'] for item in invoice_data['InvoiceItems'])
                         + sum(item['ItemTax'] for item in invoice_data['InvoiceItems']))
+        total_ht = (sum(item['ItemPrice'] for item in invoice_data['InvoiceItems']))
         # Create Invoice object
         invoice = Invoice.objects.create(
             invoice_id=invoice_id,
             invoice_date=invoice_date,
             client_name=client_name,
             supplier_name=supplier_name,
-            total_amount=total_amount
+            total_amount=total_amount,
+            total_ht=total_ht
         )
         # Extract and create InvoiceItem objects
         for item_data in invoice_data['InvoiceItems']:
@@ -60,6 +62,7 @@ def fetch_invoices(request):
             price = item_data['ItemPrice']
             tax = item_data['ItemTax']
             total_item_amount = (price + tax) * quantity
+            total_price_ht = total_item_amount - (tax * quantity)
             InvoiceItem.objects.create(
                 invoice=invoice,
                 item_label=item_label,
@@ -67,8 +70,9 @@ def fetch_invoices(request):
                 quantity=quantity,
                 price=price,
                 tax=tax,
-                total_item_amount=total_item_amount
-            )
+                total_item_amount=total_item_amount,
+                total_price_ht=total_price_ht),
+
     return render(request, 'invoices.html', {'invoices': Invoice.objects.all()})
 
 
